@@ -6,7 +6,7 @@ In this repository called Red Wine Quality dataset, you can find the code and li
 
 For full code and description, click on the PDF file.
 
-SKILL SHOWN - EDA, REGRESSION ANALYSIS, VISUALIZATIONS
+**SKILL SHOWN - EDA, REGRESSION ANALYSIS, VISUALIZATIONS**
 
 Citation info for the data itself - Citation info: P. Cortez, A. Cerdeira, F. Almeida, T. Matos and J. Reis. Modeling wine preferences by data mining from physicochemical properties. In Decision Support Systems, Elsevier, 47(4):547-553, 2009.; Link - https://archive.ics.uci.edu/ml/datasets/wine+quality
 
