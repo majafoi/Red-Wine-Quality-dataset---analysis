@@ -1,0 +1,285 @@
+---
+title: "Red Wine Quality"
+author: "MB"
+date: "1/8/2021"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+library (dplyr)
+library (ggplot2)
+library (ggpubr)
+library (tidyr)
+library (tidyverse)
+library (outliers)
+library(readr)
+RWQ<-read.csv("winequality-red.csv")
+cs=complete.cases(RWQ) #since there is a possibility that this original dataset has some missing data or NAs (not available data), I will use the function complete.cases in order to remove that part of the dataset.
+RWQ=RWQ[cs,]
+attach(RWQ) #I will only work with a complete dataset, or dataset without missing data and NAs.
+dfrm<-as.data.frame(RWQ)
+colnames(dfrm)<-c("fixed.acidity","volatile.acidity","citric.acid","residual.sugar","chlorides","free.sulfur.dioxide","total.sulfur.dioxide","density","pH","sulphates","alcohol","quality")
+attach(dfrm)
+
+# color palette - https://colorpalettes.net/color-palette-4189/
+```
+
+Hello, all! 
+
+In this R notebook, I will show you all the details about statistical analysis I performed based on a dataset called Red Wine Quality.
+
+Citation info:
+P. Cortez, A. Cerdeira, F. Almeida, T. Matos and J. Reis. Modeling wine preferences by data mining from physicochemical properties.
+In Decision Support Systems, Elsevier, 47(4):547-553, 2009.
+
+The variables are as in follows:
+
+1.	Fixed acidity – most acids involved with wine or fixed or nonvolatile (do not evaporate readily)
+2.	Volatile acidity – the amount of acetic acid in wine, which at too high of levels can lead to an unpleasant, vinegar taste.
+3.	Citric acid – found in small quantities, citric acid can add „freshness“ and flavor to wines
+4.	Residual sugar – the amount of sugar remaining after fermentation stops, its rare to find wines with less than 1 g/L and wines with greater than 45g/L are considered sweet
+5.	Chlorides – the amount of salt in the wine
+6.	Free sulfur dioxide – the free form of SO2 exists in equilibrium between molecular SO2 (as a dissolved gas) and bisulfite ion; it prevents microbial growth and the oxidation of wine
+7.	Total sulfur dioxide - amount of free and bound forms of S02; in low concentrations, SO2 is mostly undetectable in wine, but at free SO2 concentrations over 50 ppm, SO2 becomes evident in the nose and taste of wine
+8.	Density - the density of water is close to that of water depending on the percent alcohol and sugar content
+9.	Ph - describes how acidic or basic a wine is on a scale from 0 (very acidic) to 14 (very basic); most wines are between 3-4 on the pH scale
+10.	Sulphates - a wine additive which can contribute to sulfur dioxide gas (S02) levels, which acts as an antimicrobial and antioxidant
+11.	Alcohol - the percent alcohol content of the wine
+12.	Quality - output variable (based on sensory data, score between 0 and 10)
+
+
+# Summaries of the variables
+
+In this chapter, I am going to create summaries of the variables in the sample. The sample itself has 1599 observations or wines, and 12 variables which have been presented and explained above.
+
+```{r}
+boxplot(dfrm$fixed.acidity, plot = FALSE)$out # this is the formula with which you can see the actual outliers in the variable fixed acidity. I plotted false because there is no need to see the boxplot again.
+outliers = boxplot(dfrm$fixed.acidity, plot = FALSE)$out # we are going to attach the formula above to a variable named outliers.
+dfrm = dfrm[-which(dfrm$fixed.acidity %in% outliers),] # with this formula, I removed the outliers from the data
+summary(dfrm$fixed.acidity)
+sd(dfrm$fixed.acidity)
+IQR(dfrm$fixed.acidity)
+binsize = diff(range(dfrm$fixed.acidity))/10 # code for bin number on histogram
+ggplot(dfrm, aes(x = dfrm$fixed.acidity)) + geom_histogram(binwidth = binsize, fill = "#c82f63",colour = "#f9e0ec")+
+  geom_vline(aes(xintercept = mean(dfrm$fixed.acidity)), colour = "#f9e0ec",linetype = "dashed",size = 1)
+ggplot(dfrm, aes(x = dfrm$fixed.acidity)) + geom_density()
+ggplot(dfrm, aes(x = dfrm$fixed.acidity)) + geom_boxplot (fill = "#c82f63", outlier.colour = "red", outlier.shape = 10, outlier.size = 2)
+```
+
+Typical fixed acidity level of red wines in the dataset is 8.163, with range of 4.6 to 12.3, which is a pretty wide range. The total variability is 1.5, which is low. You can see on the histogram and density plot that the distribution is positively skewed, and after removing outliers - it looks like a pretty normal distribution (still skewed, though). Boxplot doesn't show any outliers.
+
+```{r}
+boxplot(dfrm$volatile.acidity, plot = FALSE)$out # this is the formula with which you can see the actual outliers in the variable fixed acidity. I plotted false because there is no need to see the boxplot again.
+outliers = boxplot(dfrm$volatile.acidity, plot = FALSE)$out # we are going to attach the formula above to a variable named outliers.
+dfrm = dfrm[-which(dfrm$volatile.acidity %in% outliers),] # with this formula, I removed the outliers from the data
+summary(dfrm$volatile.acidity)
+sd(dfrm$volatile.acidity)
+IQR(dfrm$volatile.acidity)
+binsize = diff(range(dfrm$volatile.acidity))/10 # code for bin number on histogram
+ggplot(dfrm, aes(x = dfrm$volatile.acidity)) + geom_histogram(binwidth = binsize, fill = "#c82f63",colour = "#f9e0ec")+
+  geom_vline(aes(xintercept = mean(dfrm$volatile.acidity)), colour = "#f9e0ec",linetype = "dashed",size = 1)
+ggplot(dfrm, aes(x = dfrm$volatile.acidity)) + geom_density()
+ggplot(dfrm, aes(x = dfrm$volatile.acidity)) + geom_boxplot (fill = "#c82f63", outlier.colour = "red", outlier.shape = 10, outlier.size = 2)
+```
+
+Volatile acidity is the amount of acetic acid in wine which, at too high of levels, can lead to an unpleasant and vinegar taste. Typical value for this dataset is 0.5225, with median being very close to it. But, since first and third quartile are very different, I suppose that there is a skewness in the data. Histogram proves it, and density plot shows it is a bimodal distribution, with positive skewness. After deleting outliers, It remains only one, but I shall leave it as it is for now. Regardless of the wide range, standard deviation is 0.16, with middle variability being higher than the overall.
+
+
+```{r}
+boxplot(dfrm$citric.acid, plot = FALSE)$out # this is the formula with which you can see the actual outliers in the variable fixed acidity. I plotted false because there is no need to see the boxplot again.
+outliers = boxplot(dfrm$citric.acid, plot = FALSE)$out # we are going to attach the formula above to a variable named outliers.
+dfrm = dfrm[-which(dfrm$citric.acid %in% outliers),] # with this formula, I removed the outliers from the data
+summary(dfrm$citric.acid)
+sd(dfrm$citric.acid)
+IQR(dfrm$citric.acid)
+binsize = diff(range(dfrm$citric.acid))/10 # code for bin number on histogram
+ggplot(dfrm, aes(x = dfrm$citric.acid)) + geom_histogram(binwidth = binsize, fill = "#c82f63",colour = "#f9e0ec")+
+  geom_vline(aes(xintercept = mean(dfrm$citric.acid)), colour = "#f9e0ec",linetype = "dashed",size = 1)
+ggplot(dfrm, aes(x = dfrm$citric.acid)) + geom_density()
+ggplot(dfrm, aes(x = dfrm$citric.acid)) + geom_boxplot (fill = "#c82f63", outlier.colour = "red", outlier.shape = 10, outlier.size = 2)
+```
+
+Citric acid is found in small quantities in wines, adding "freshness" and flavour to wines. After deleting extreme outliers, the typical value is 0.26, with median not being too far from it. Again, the quartiles are different, and the range is wide. The middle, 50%, variability of data is larger than overall variability. Even after deleting outliers, the distribution is positively skewed, without any visible outliers. Still, because the density plot shows that the distribution clearly isn't normally distributed, I won't use this variable in the further analyses.
+
+
+```{r}
+boxplot(dfrm$residual.sugar, plot = FALSE)$out # this is the formula with which you can see the actual outliers in the variable fixed acidity. I plotted false because there is no need to see the boxplot again.
+outliers = boxplot(dfrm$residual.sugar, plot = FALSE)$out # we are going to attach the formula above to a variable named outliers.
+dfrm = dfrm[-which(dfrm$residual.sugar %in% outliers),] # with this formula, I removed the outliers from the data
+summary(dfrm$residual.sugar)
+sd(dfrm$residual.sugar)
+IQR(dfrm$residual.sugar)
+binsize = diff(range(dfrm$residual.sugar))/10 # code for bin number on histogram
+ggplot(dfrm, aes(x = dfrm$residual.sugar)) + geom_histogram(binwidth = binsize, fill = "#c82f63",colour = "#f9e0ec")+
+  geom_vline(aes(xintercept = mean(dfrm$residual.sugar)), colour = "#f9e0ec",linetype = "dashed",size = 1)
+ggplot(dfrm, aes(x = dfrm$residual.sugar)) + geom_density()
+ggplot(dfrm, aes(x = dfrm$residual.sugar)) + geom_boxplot (fill = "#c82f63", outlier.colour = "red", outlier.shape = 10, outlier.size = 2)
+```
+
+Residual sugar is the amount of sugar remaining after fermentation stops, it is very rare to find wines with less than 1g/L and wines with greater than 45g/L (those are considered sweet). After I deleted extreme outliers, there was no extremes like that, and it all stayed between 1.2 and 3.1 grams/L of red wine. Mean is just slightly higher than the median, which gives us positive skewness. Total variability shown by standard deviation is smaller than middle variability. The distribution shown by density plot, histogram and boxplot looks almost perfect.
+
+```{r}
+boxplot(dfrm$chlorides, plot = FALSE)$out # this is the formula with which you can see the actual outliers in the variable fixed acidity. I plotted false because there is no need to see the boxplot again.
+outliers = boxplot(dfrm$chlorides, plot = FALSE)$out # we are going to attach the formula above to a variable named outliers.
+dfrm = dfrm[-which(dfrm$chlorides %in% outliers),] # with this formula, I removed the outliers from the data
+summary(dfrm$chlorides)
+sd(dfrm$chlorides)
+IQR(dfrm$chlorides)
+binsize = diff(range(dfrm$chlorides))/10 # code for bin number on histogram
+ggplot(dfrm, aes(x = dfrm$chlorides)) + geom_histogram(binwidth = binsize, fill = "#c82f63",colour = "#f9e0ec")+
+  geom_vline(aes(xintercept = mean(dfrm$chlorides)), colour = "#f9e0ec",linetype = "dashed",size = 1)
+ggplot(dfrm, aes(x = dfrm$chlorides)) + geom_density()
+ggplot(dfrm, aes(x = dfrm$chlorides)) + geom_boxplot (fill = "#c82f63", outlier.colour = "red", outlier.shape = 10, outlier.size = 2)
+```
+
+Chlorides represent the amount of salt in the wine. The average amount of chlorides in these red wines is 0.07, with minimum values of salt in wines overall. Median is just slightly higher than the mean, which gives us negative skewness, that is almost not visible on the plots. It looks, once again, like perfect normal distribution, after I've deleted outliers.
+
+
+```{r}
+boxplot(dfrm$free.sulfur.dioxide, plot = FALSE)$out # this is the formula with which you can see the actual outliers in the variable fixed acidity. I plotted false because there is no need to see the boxplot again.
+outliers = boxplot(dfrm$free.sulfur.dioxide, plot = FALSE)$out # we are going to attach the formula above to a variable named outliers.
+dfrm = dfrm[-which(dfrm$free.sulfur.dioxide %in% outliers),] # with this formula, I removed the outliers from the data
+summary(dfrm$free.sulfur.dioxide)
+sd(dfrm$free.sulfur.dioxide)
+IQR(dfrm$free.sulfur.dioxide)
+binsize = diff(range(dfrm$free.sulfur.dioxide))/10 # code for bin number on histogram
+ggplot(dfrm, aes(x = dfrm$free.sulfur.dioxide)) + geom_histogram(binwidth = binsize, fill = "#c82f63",colour = "#f9e0ec")+
+  geom_vline(aes(xintercept = mean(dfrm$free.sulfur.dioxide)), colour = "#f9e0ec",linetype = "dashed",size = 1)
+ggplot(dfrm, aes(x = dfrm$free.sulfur.dioxide)) + geom_density()
+ggplot(dfrm, aes(x = dfrm$free.sulfur.dioxide)) + geom_boxplot (fill = "#c82f63", outlier.colour = "red", outlier.shape = 10, outlier.size = 2)
+```
+
+Free sulfur dioxide is the free form of SO2 which exists in the equilibrium between molecular SO2 (as a dissolved gas) and bisulfite ion, it also prevents microbial grown and the oxidation of the wine. Typical level of free sulfur dioxide in these wines is 15.2 (positive skewness), but the minimum and maximum value here is differentiating a lot. The standard deviation and IQR are high. It is visible on the plots, that this distribution is positively skewed, and not a normal distribution. Because of that reason, I'll exclude it from further analyses.
+
+```{r}
+boxplot(dfrm$total.sulfur.dioxide, plot = FALSE)$out # this is the formula with which you can see the actual outliers in the variable fixed acidity. I plotted false because there is no need to see the boxplot again.
+outliers = boxplot(dfrm$total.sulfur.dioxide, plot = FALSE)$out # we are going to attach the formula above to a variable named outliers.
+dfrm = dfrm[-which(dfrm$total.sulfur.dioxide %in% outliers),] # with this formula, I removed the outliers from the data
+summary(dfrm$total.sulfur.dioxide)
+sd(dfrm$total.sulfur.dioxide)
+IQR(dfrm$total.sulfur.dioxide)
+binsize = diff(range(dfrm$total.sulfur.dioxide))/10 # code for bin number on histogram
+ggplot(dfrm, aes(x = dfrm$total.sulfur.dioxide)) + geom_histogram(binwidth = binsize, fill = "#c82f63",colour = "#f9e0ec")+
+  geom_vline(aes(xintercept = mean(dfrm$total.sulfur.dioxide)), colour = "#f9e0ec",linetype = "dashed",size = 1)
+ggplot(dfrm, aes(x = dfrm$total.sulfur.dioxide)) + geom_density()
+ggplot(dfrm, aes(x = dfrm$total.sulfur.dioxide)) + geom_boxplot (fill = "#c82f63", outlier.colour = "red", outlier.shape = 10, outlier.size = 2)
+```
+
+Total sulfur dioxide is the amount of free and bound forms of SO2. In low concentrations, SO2 is mostly undetectable in wine, but at free SO2 concentrations over 50 ppm, SO2 becomes evident in the nose and taste of wine. Typical value in these wines here is 38.37 (positive skewness), but the maximum value exceeds the concentration above 50 ppm. Both standard deviation and IQR are high, and this variable is going to be excluded from further analyses.
+
+
+```{r}
+boxplot(dfrm$density, plot = FALSE)$out # this is the formula with which you can see the actual outliers in the variable fixed acidity. I plotted false because there is no need to see the boxplot again.
+outliers = boxplot(dfrm$density, plot = FALSE)$out # we are going to attach the formula above to a variable named outliers.
+dfrm = dfrm[-which(dfrm$density %in% outliers),] # with this formula, I removed the outliers from the data
+summary(dfrm$density)
+sd(dfrm$density)
+IQR(dfrm$density)
+binsize = diff(range(dfrm$density))/10 # code for bin number on histogram
+ggplot(dfrm, aes(x = dfrm$density)) + geom_histogram(binwidth = binsize, fill = "#c82f63",colour = "#f9e0ec")+
+  geom_vline(aes(xintercept = mean(dfrm$density)), colour = "#f9e0ec",linetype = "dashed",size = 1)
+ggplot(dfrm, aes(x = dfrm$density)) + geom_density()
+ggplot(dfrm, aes(x = dfrm$density)) + geom_boxplot (fill = "#c82f63", outlier.colour = "red", outlier.shape = 10, outlier.size = 2)
+```
+
+Density represents density of water, which is close to that of the water, depending on the percent alcohol and sugar content. All values are very close together, with median being just slighly over mean (negative skewness). But, this skewness isn't visible on the plots = normal distribution.
+
+
+```{r}
+boxplot(dfrm$pH, plot = FALSE)$out # this is the formula with which you can see the actual outliers in the variable fixed acidity. I plotted false because there is no need to see the boxplot again.
+outliers = boxplot(dfrm$pH, plot = FALSE)$out # we are going to attach the formula above to a variable named outliers.
+dfrm = dfrm[-which(dfrm$pH %in% outliers),] # with this formula, I removed the outliers from the data
+summary(dfrm$pH)
+sd(dfrm$pH)
+IQR(dfrm$pH)
+binsize = diff(range(dfrm$pH))/10 # code for bin number on histogram
+ggplot(dfrm, aes(x = dfrm$pH)) + geom_histogram(binwidth = binsize, fill = "#c82f63",colour = "#f9e0ec")+
+  geom_vline(aes(xintercept = mean(dfrm$pH)), colour = "#f9e0ec",linetype = "dashed",size = 1)
+ggplot(dfrm, aes(x = dfrm$pH)) + geom_density()
+ggplot(dfrm, aes(x = dfrm$pH)) + geom_boxplot (fill = "#c82f63", outlier.colour = "red", outlier.shape = 10, outlier.size = 2)
+```
+
+pH describes how acidic or basic a wine is on a scale from 0 (very acidic) to 14 (very basic), and most wines are between 3-4 on the pH scale. Here, the typical value is 3.327, which is within the range of 3-4. Again, on the plots we can see that this distribution is normal.
+
+
+```{r}
+boxplot(dfrm$sulphates, plot = FALSE)$out # this is the formula with which you can see the actual outliers in the variable fixed acidity. I plotted false because there is no need to see the boxplot again.
+outliers = boxplot(dfrm$sulphates, plot = FALSE)$out # we are going to attach the formula above to a variable named outliers.
+dfrm = dfrm[-which(dfrm$sulphates %in% outliers),] # with this formula, I removed the outliers from the data
+summary(dfrm$sulphates)
+sd(dfrm$sulphates)
+IQR(dfrm$sulphates)
+binsize = diff(range(dfrm$sulphates))/10 # code for bin number on histogram
+ggplot(dfrm, aes(x = dfrm$sulphates)) + geom_histogram(binwidth = binsize, fill = "#c82f63",colour = "#f9e0ec")+
+  geom_vline(aes(xintercept = mean(dfrm$sulphates)), colour = "#f9e0ec",linetype = "dashed",size = 1)
+ggplot(dfrm, aes(x = dfrm$sulphates)) + geom_density()
+ggplot(dfrm, aes(x = dfrm$sulphates)) + geom_boxplot (fill = "#c82f63", outlier.colour = "red", outlier.shape = 10, outlier.size = 2)
+```
+
+Sulphates are a wine additive which can contribute to sulfur dioxide gas (SO2) levels, which acts as an antimicrobial and antioxidant. Typical value here is 0.63, with median slightly lower than it. The minimum and maximum value differentiate high, but inner (middle) variability is higher. Plots show positive skewness, but density plot appears to show pretty normal distribution.
+
+```{r}
+boxplot(dfrm$alcohol, plot = FALSE)$out # this is the formula with which you can see the actual outliers in the variable fixed acidity. I plotted false because there is no need to see the boxplot again.
+outliers = boxplot(dfrm$alcohol, plot = FALSE)$out # we are going to attach the formula above to a variable named outliers.
+dfrm = dfrm[-which(dfrm$alcohol %in% outliers),] # with this formula, I removed the outliers from the data
+summary(dfrm$alcohol)
+sd(dfrm$alcohol)
+IQR(dfrm$alcohol)
+binsize = diff(range(dfrm$alcohol))/10 # code for bin number on histogram
+ggplot(dfrm, aes(x = dfrm$alcohol)) + geom_histogram(binwidth = binsize, fill = "#c82f63",colour = "#f9e0ec")+
+  geom_vline(aes(xintercept = mean(dfrm$alcohol)), colour = "#f9e0ec",linetype = "dashed",size = 1)
+ggplot(dfrm, aes(x = dfrm$alcohol)) + geom_density()
+ggplot(dfrm, aes(x = dfrm$alcohol)) + geom_boxplot (fill = "#c82f63", outlier.colour = "red", outlier.shape = 10, outlier.size = 2)
+```
+
+Alcohol variable represents the percent alcohol of the wine. Typical percentage of alcohol in these wines is 10.36%, with range from 8 to 13. The density plot doesn't show the right shape of normal distribution, so I'll keep this variable out of further analyses, although this variable plays a big role in wines.
+
+```{r}
+summary(dfrm$quality)
+sd(dfrm$quality)
+IQR(dfrm$quality)
+binsize = diff(range(dfrm$quality))/10 # code for bin number on histogram
+ggplot(dfrm, aes(x = as.factor(quality))) + geom_bar(fill = "#c82f63",colour = "#f9e0ec")
+```
+
+The quality variable is an output variable, based on sensory data, and it scores between 0 and 10. The highest quality score here is 8, and the lowest 3. This is the output variable we are trying to predict (y-variable), so we'll keep it.
+
+With this, I have finished summaries of all variables in the sample. Since we want to predict the quality variable, this is going to be our y-variable or dependent variable, whereas all other variables will be independent variables (x-variables). More info on that in the next chapter!
+
+
+# Regression analysis and correlation
+
+In the prior chapter, I have shown summaries and basic graphics of each variable. The main goal of this dataset analysis is that we determine which variables make a wine good, or which variables give higher quality of red wines in the sample, but also in the population as well.
+
+For that, I am going to calculate correlations, to see what the relationship between variables is. After that, I am going to calculate linear regression models where the y-variable (dependent variable) is quality variable, and all other variables will be independent variables or x-variables.
+
+So, let us start with correlation first. Since there are 66 combination of correlation, I am making a correlation matrix, and then proceed from there to extract only significant correlations (above 0,5) and make a regression model.
+
+```{r}
+cormat<-cor(dfrm)
+print(cormat, digits=2)
+```
+
+From the correlation matrix, I several correlation coefficients higher than 0.4, but the number of combination is too high. Because of that, I want to check how much variability is accounted by all of the variables together (x), versus Quality (y) variable. In order to do that, I'm going to create a multiple regression model.
+
+```{r}
+reg8<-lm(quality~fixed.acidity+volatile.acidity+residual.sugar+chlorides+density+pH+sulphates)
+print(summary(reg8))
+```
+
+As you can see, at first, R squared isn't particulary high - only 0.2961, which means that there are other factors and variables in real life that are having an effect on quality of red wines. But, all p-values of x variables are lower than 0.05, which means that they are significant in the model, and the model itself has a low p-value.
+
+Residuals should be scattered around, forming no specific form. As we can see below, there is no specific form taken.
+
+```{r}
+plot(reg8$residuals)
+```
+
+The linear model is --> 
+
+Quality = 205,31 + 0,20828 * fixed acidity - 1,04221 * volatile acidity + 0,08765 * residual sugar - 2,04416 * chlorides - 205,35225 * density + 0,89646 * pH + 1,22568 * sulphates
